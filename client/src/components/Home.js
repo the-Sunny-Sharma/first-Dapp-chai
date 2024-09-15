@@ -31,24 +31,49 @@ export default function Home({ state }) {
   }, [state.account]);
 
   // Fetch Memos (Transactions)
-  useEffect(() => {
-    const getMemos = async () => {
-      if (contract) {
-        try {
-          const memos = await contract.getMemos();
-          if (memos) {
-            setTransactions(memos);
-          } else {
-            console.warn("No memos returned from the contract");
-          }
-        } catch (error) {
-          console.error("Error fetching memos:", error);
-        }
-      }
-    };
+  // useEffect(() => {
+  //   const getMemos = async () => {
+  //     if (contract) {
+  //       try {
+  //         const memos = await contract.getMemos();
+  //         if (memos) {
+  //           setTransactions(memos);
+  //         } else {
+  //           console.warn("No memos returned from the contract");
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching memos:", error);
+  //       }
+  //     }
+  //   };
 
-    contract && getMemos();
+  //   contract && getMemos();
+  // }, [contract]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const getMemos = async () => {
+        if (contract) {
+          try {
+            const memos = await contract.getMemos();
+            if (memos) {
+              setTransactions(memos);
+            } else {
+              console.warn("No memos returned from the contract");
+            }
+          } catch (error) {
+            console.error("Error fetching memos:", error);
+          }
+        }
+      };
+
+      getMemos();
+    }, 5000); // Poll every 5 seconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
   }, [contract]);
+
   useEffect(() => {
     if (window.ethereum) {
       window.ethereum.on("chainChanged", () => {
@@ -89,6 +114,7 @@ export default function Home({ state }) {
       alert(`Payment of ${selectedFood} ETH for ${name} was successful.`);
     } catch (error) {
       console.error("Error during payment:", error);
+      setLoading(false); // Set loading to false when transaction fails
       alert("Payment failed! Please check your wallet and contract.");
     }
   };
@@ -222,23 +248,32 @@ export default function Home({ state }) {
                   </td>
                 </tr>
               ) : (
-                transactions.map((tx, index) => (
-                  <tr key={index}>
-                    <td className="border px-4 py-2">{index + 1}</td>
-                    <td className="border px-4 py-2">{tx.name}</td>{" "}
-                    {/* Product Name */}
-                    <td className="border px-4 py-2">{tx.message}</td>{" "}
-                    {/* Message */}
-                    <td className="border px-4 py-2">
-                      {formatTimestamp(tx.timestamp)}
-                    </td>{" "}
-                    {/* Date & Time */}
-                    <td className="border px-4 py-2">
-                      {`${formatEther(tx.value)} ETH for ${tx.name}`}{" "}
-                      {/* Ether value + Product name */}
-                    </td>
-                  </tr>
-                ))
+                transactions.map((tx, index) => {
+                  // Find the product name based on the value
+                  const foodItem = foodOptions.find(
+                    (option) =>
+                      option.price === parseFloat(formatEther(tx.value))
+                  );
+                  const productName = foodItem ? foodItem.name : "Unknown Item";
+
+                  return (
+                    <tr key={index}>
+                      <td className="border px-4 py-2">{index + 1}</td>
+                      <td className="border px-4 py-2">{tx.name}</td>{" "}
+                      {/* Product Name */}
+                      <td className="border px-4 py-2">{tx.message}</td>{" "}
+                      {/* Message */}
+                      <td className="border px-4 py-2">
+                        {formatTimestamp(tx.timestamp)}
+                      </td>{" "}
+                      {/* Date & Time */}
+                      <td className="border px-4 py-2">
+                        {`${formatEther(tx.value)} ETH for ${productName}`}{" "}
+                        {/* Ether value + Product name */}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
