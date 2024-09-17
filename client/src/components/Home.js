@@ -31,25 +31,26 @@ export default function Home({ state }) {
   }, [state.account]);
 
   // Fetch Memos (Transactions)
-  // useEffect(() => {
-  //   const getMemos = async () => {
-  //     if (contract) {
-  //       try {
-  //         const memos = await contract.getMemos();
-  //         if (memos) {
-  //           setTransactions(memos);
-  //         } else {
-  //           console.warn("No memos returned from the contract");
-  //         }
-  //       } catch (error) {
-  //         console.error("Error fetching memos:", error);
-  //       }
-  //     }
-  //   };
+  useEffect(() => {
+    const getMemos = async () => {
+      if (contract) {
+        try {
+          const memos = await contract.getMemos();
+          if (memos) {
+            setTransactions(memos);
+          } else {
+            console.warn("No memos returned from the contract");
+          }
+        } catch (error) {
+          console.error("Error fetching memos:", error);
+        }
+      }
+    };
 
-  //   contract && getMemos();
-  // }, [contract]);
+    contract && getMemos();
+  }, [contract]);
 
+  // Fetch Memos (Transactions) [Polling Mechanism]
   useEffect(() => {
     const intervalId = setInterval(() => {
       const getMemos = async () => {
@@ -66,10 +67,8 @@ export default function Home({ state }) {
           }
         }
       };
-
       getMemos();
     }, 5000); // Poll every 5 seconds
-
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
   }, [contract]);
@@ -260,7 +259,7 @@ export default function Home({ state }) {
                     <tr key={index}>
                       <td className="border px-4 py-2">{index + 1}</td>
                       <td className="border px-4 py-2">{tx.name}</td>{" "}
-                      {/* Product Name */}
+                      {/* Sender Name */}
                       <td className="border px-4 py-2">{tx.message}</td>{" "}
                       {/* Message */}
                       <td className="border px-4 py-2">
@@ -269,7 +268,7 @@ export default function Home({ state }) {
                       {/* Date & Time */}
                       <td className="border px-4 py-2">
                         {`${formatEther(tx.value)} ETH for ${productName}`}{" "}
-                        {/* Ether value + Product name */}
+                        {/* ETH value + product name */}
                       </td>
                     </tr>
                   );
